@@ -1,0 +1,14 @@
+# filebeat-config/filebeat.yml
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /var/log/zeek/current/sip.log
+  json.keys_under_root: true
+  json.add_error_key: true
+
+output.kafka:
+  hosts: ["kafka:29092"]
+  topic: 'voip_logs'
+  codec.json:
+    pretty: false

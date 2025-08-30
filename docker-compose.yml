@@ -1,0 +1,141 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    container_name: zookeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITIY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://20.193.251.115:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.6.2
+    container_name: elasticsearch
+    environment:
+      - "discovery.type=single-node"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "xpack.security.enabled=true"
+      - "ELASTIC_PASSWORD=SuperStrongPassworVeryStretchableLikeR1ch@rd5"
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.6.2
+    container_name: kibana
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5601:5601"
+    environment:
+      - "ELASTICSEARCH_HOSTS=http://elasticsearch:9200"
+      - "ELASTICSEARCH_USERNAME=kibana_system"
+      - "ELASTICSEARCH_PASSWORD=GyEQLDrFNo5ElP5PDXlc"
+      - "SERVER_PUBLIC_BASEURL=https://voiptracer.pranavsahni.tech/kibana/"
+      - "SERVER_BASEPATH=/kibana"
+
+  zeek:
+    image: zeek/zeek:latest
+    container_name: zeek
+    network_mode: "host"
+    volumes:
+      - zeeklogs:/opt/zeek/logs
+      - ./zeek-config:/opt/zeek/share/zeek/site/
+    command: /bin/bash -c "zeekctl deploy && tail -f /dev/null"
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.6.2
+    container_name: filebeat
+    user: root
+    depends_on:
+      - zeek
+      - kafka
+    volumes:
+      - ./filebeat-config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - zeeklogs:/var/log/zeek:ro
+
+  consumer:
+    build: ./consumer-app
+    container_name: consumer
+    depends_on:
+      - kafka
+      - elasticsearch
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - ELASTICSEARCH_HOST=http://elasticsearch:9200
+      - MAXMIND_LICENSE_KEY=KEYHERE
+    restart: on-failure
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_USER: voipuser
+      POSTGRES_PASSWORD: voippassword
+      POSTGRES_DB: voip_tracer_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build: ./api-app
+    container_name: api
+    depends_on:
+      - elasticsearch
+      - postgres
+    ports: 
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://voipuser:voippassword@postgres/voip_tracer_db
+      - ELASTICSEARCH_HOST=http://elasticsearch:9200
+    restart: on-failure
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nginx
+    restart: unless-stopped
+    ports: 
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-config:/etc/nginx/conf.d
+      - certbot-data:/etc/letsencrypt
+      - certbot-www:/var/www/html
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./nginx-config:/etc/nginx/conf.d
+      - certbot-data:/etc/letsencrypt
+      - certbot-www:/var/www/html
+
+
+volumes:
+  esdata:
+    driver: local
+  zeeklogs:
+    driver: local
+  pgdata:
+    driver: local
+  certbot-data:
+    driver: local
+  certbot-www:
+    driver: local
