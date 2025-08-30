@@ -27,6 +27,15 @@ except Exception as e:
     print(f"Could not connect to Elasticsearch: {e}")
     es = None
 
+# User Authentication Setup
+fastapi_users = FastAPIUsers[User, int](get_user_db, auth_backend])
+
+current_active_user = fastapi_users.current_user(active=True)
+
+app.include_router(fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"])
+app.include_router(fastapi_users.get_register_router(UserRead, UserCreate), prefix="/auth", tags=["auth"])
+app.include_router(fastapi_users.get_users_router(UserRead, UserUpdate), prefix="/users", tags=["users"])
+
 @app.get("/")
 def read_root():
     return {"status": "VoIP Tracer API is running"}

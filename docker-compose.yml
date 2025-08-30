@@ -31,7 +31,7 @@ services:
       - "discovery.type=single-node"
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - "xpack.security.enabled=true"
-      - "ELASTIC_PASSWORD=SuperStrongPassworVeryStretchableLikeR1ch@rd5"
+      - "ELASTIC_PASSWORD=${ELASTIC_PASSWORD}"
     ports:
       - "9200:9200"
     volumes:
@@ -47,7 +47,7 @@ services:
     environment:
       - "ELASTICSEARCH_HOSTS=http://elasticsearch:9200"
       - "ELASTICSEARCH_USERNAME=kibana_system"
-      - "ELASTICSEARCH_PASSWORD=GyEQLDrFNo5ElP5PDXlc"
+      - "ELASTICSEARCH_PASSWORD=${KIBANA_SYSTEM_PASSWORD}"
       - "SERVER_PUBLIC_BASEURL=https://voiptracer.pranavsahni.tech/kibana/"
       - "SERVER_BASEPATH=/kibana"
 
@@ -80,15 +80,15 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - ELASTICSEARCH_HOST=http://elasticsearch:9200
-      - MAXMIND_LICENSE_KEY=KEYHERE
+      - MAXMIND_LICENSE_KEY=${MAXMIND_LICENSE_KEY}
     restart: on-failure
 
   postgres:
     image: postgres:15
     container_name: postgres
     environment:
-      POSTGRES_USER: voipuser
-      POSTGRES_PASSWORD: voippassword
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: voip_tracer_db
     ports:
       - "5432:5432"
@@ -104,8 +104,9 @@ services:
     ports: 
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://voipuser:voippassword@postgres/voip_tracer_db
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/voip_tracer_db
       - ELASTICSEARCH_HOST=http://elasticsearch:9200
+      - SECRET_KEY=${SECRET_KEY}
     restart: on-failure
 
   nginx:

@@ -6,7 +6,7 @@ from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://voipuser:voippassword@postgres/voip_tracer_db")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://user:password@postgres/voip_tracer_db")
 
 class Base(DeclarativeBase):
     pass
