@@ -105,3 +105,21 @@ async def upload_pcap(
         raise HTTPException(status_code=500, detail=f"Could not send job to Kafka: {e}")
 
     return {"status": "success", "message": f"File '{file.filename}' uploaded and queued for analysis."}
+
+@app.get("/stats/risk_distribution", tags=["Stats"])
+async def get_risk_distribution(user: User = Depends(current_active_user)):
+    query = {"size":0,"aggs":{"risk_scores":{"range":{"field":"risk_score","ranges":[{"to":1,"key":"Low"},{"from":1,"to":49,"key":"Medium"},{"from":50,"key":"High"}]}}}}
+    try:
+        response = es.search(index="voip_calls", body=query)
+        buckets = response['aggregations']['risk_scores']['buckets']
+        return {"labels": [b['key'] for b in buckets], "data": [b['doc_count'] for b in buckets]}
+    except Exception: return {"labels": [], "data": []}
+
+@app.get("/stats/timeline", tags=["Stats"])
+async def get_timeline(user: User = Depends(current_active_user)):
+    query = {"size":0,"aggs":{"calls_over_time":{"date_histogram":{"field":"ts","calendar_interval":"1h","time_zone":"UTC"}}}}
+    try:
+        response = es.search(index="voip_calls", body=query)
+        buckets = response['aggregations']['calls_over_time']['buckets']
+        return {"labels": [b['key_as_string'] for b in buckets], "data": [b['doc_count'] for b in buckets]}
+    except Exception: return {"labels": [], "data": []}

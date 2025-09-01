@@ -152,6 +152,18 @@ services:
       - pcap_storage:/pcap_storage:ro # Read-only access to the files
     restart: on-failure
 
+  analysis-service:
+    build: ./analysis-service
+    container_name: analysis-service
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      consumer:
+        condition: service_started
+    environment:
+      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
+    restart: on-failure
+
   nginx:
     image: nginx:1.25-alpine
     container_name: nginx

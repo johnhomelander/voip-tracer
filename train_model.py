@@ -1,16 +1,18 @@
-# train_model.py
+# train_model.py (Corrected and More Robust)
 import pandas as pd
 import joblib
 from elasticsearch import Elasticsearch
 import os
+from sklearn.ensemble import IsolationForest
 
 print("Starting model training...")
-es = Elasticsearch(os.getenv("ELASTICSEARCH_URL"))
+es = Elasticsearch(f"http://elastic:{os.getenv('ELASTIC_PASSWORD')}@localhost:9200")
 model_filename = 'isolation_forest.joblib'
 
 try:
-    # Query Elasticsearch for all available call data to use for training
-    response = es.search(index="voip_calls", body={"query": {"match_all": {}}}, size=10000)
+    # Use the modern 'query' parameter to fix the DeprecationWarning
+    response = es.search(index="voip_calls", query={"match_all": {}}, size=10000)
+
     hits = [hit['_source'] for hit in response['hits']['hits']]
     if not hits:
         print("No data in Elasticsearch to train on. Please upload a PCAP first.")
@@ -19,8 +21,15 @@ try:
     df = pd.DataFrame(hits)
     print(f"Loaded {len(df)} records for training.")
 
-    # --- Feature Engineering ---
-    df['duration'] = pd.to_numeric(df.get('duration'), errors='coerce').fillna(0)
+    # --- Feature Engineering (More Robust) ---
+
+    # This is the fix: Check if the 'duration' column exists. If not, create it with zeros.
+    if 'duration' not in df.columns:
+        df['duration'] = 0
+
+    # Now, we can safely process the column, knowing it exists.
+    df['duration'] = pd.to_numeric(df['duration'], errors='coerce').fillna(0)
+
     features = df.groupby('id.orig_h').agg(
         call_frequency=('ts', 'count'),
         avg_duration=('duration', 'mean')
