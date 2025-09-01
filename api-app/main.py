@@ -24,12 +24,12 @@ async def lifespan(app: FastAPI):
     await create_db_and_tables()
     yield
 
-app = FastAPI(title="VoIP Tracer API", lifespan=lifespan, root_path=ROOT_PATH)
+app = FastAPI(title="VoIP Tracer API", lifespan=lifespan, root_path=ROOT_PATH,docs_url=None,redoc_url=None)
 
 # This list defines which origins are allowed to connect.
 origins = [
     "http://localhost:3000",
-    "https://voiptracer.yourdomain.com",
+    "https://voiptracer.pranavsahni.tech",
 ]
 
 app.add_middleware(
@@ -46,7 +46,7 @@ fastapi_users = FastAPIUsers[User, int](get_user_manager, [auth_backend])
 current_active_user = fastapi_users.current_user(active=True)
 
 app.include_router(fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"])
-app.include_router(fastapi_users.get_register_router(UserRead, UserCreate), prefix="/auth", tags=["auth"])
+#app.include_router(fastapi_users.get_register_router(UserRead, UserCreate), prefix="/auth", tags=["auth"])
 app.include_router(fastapi_users.get_users_router(UserRead, UserUpdate), prefix="/users", tags=["users"])
 
 @app.get("/calls", tags=["VoIP Data"])
