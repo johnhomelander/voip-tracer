@@ -16,7 +16,7 @@ except FileNotFoundError:
     print("ERROR: 'isolation_forest.joblib' not found. Please run the training script first.")
     exit()
 
-es = Elasticsearch(os.getenv("ELASTICSEARCH_URL"))
+es = Elasticsearch(f"http://elastic:{os.getenv('ELASTIC_PASSWORD')}@elasticsearch:9200")
 print("Connected to Elasticsearch.")
 
 # --- MAIN ANALYSIS LOOP ---

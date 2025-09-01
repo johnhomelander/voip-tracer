@@ -17,7 +17,7 @@ MAXMIND_LICENSE_KEY = os.getenv("MAXMIND_LICENSE_KEY")
 GEOIP_DOWNLOAD_URL = f"https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key={MAXMIND_LICENSE_KEY}&suffix=tar.gz"
 HIGH_RISK_COUNTRIES = {"Russia", "China", "Iran", "North Korea"}
 KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:29092")
-ELASTICSEARCH_URL = os.getenv("ELASTICSEARCH_URL")
+ELASTICSEARCH_URL = f"http://elastic:{os.getenv('ELASTIC_PASSWORD')}@elasticsearch:9200"
 
 # --- SETUP FUNCTIONS ---
 def setup_geoip_database():
