@@ -188,12 +188,10 @@ services:
       - certbot-www:/var/www/html
 
   frontend:
-    build: ./voip-tracer-frontend
+    build: ./voiptracer-frontend
     container_name: frontend
-    networks:
-      - voip-net
     env_file:
-      - ./voip-tracer-frontend/.env.local
+      - ./voiptracer-frontend/.env.local
     restart: unless-stopped
 
 

@@ -1,4 +1,4 @@
-# voip-tracer-frontend/Dockerfile
+# voiptracer-frontend/Dockerfile
 
 # --- Stage 1: Build Stage ---
 FROM node:18-alpine AS builder
