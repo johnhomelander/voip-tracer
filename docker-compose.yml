@@ -18,11 +18,30 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_LISTENER_SECURITIY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://20.193.251.115:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:29092 --list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.3.0
+    depends_on:
+      kafka:
+        condition: service_healthy
+    command: >
+      bash -c "echo 'Waiting for Kafka to be ready...' && \
+               cub kafka-ready -b kafka:29092 1 20 && \
+               echo 'Kafka is ready!' && \
+               kafka-topics --create --topic voip_logs --partitions 1 --replication-factor 1 --if-not-exists --bootstrap-server kafka:29092 && \
+               kafka-topics --create --topic pcap_jobs --partitions 1 --replication-factor 1 --if-not-exists --bootstrap-server kafka:29092 && \ 
+               echo 'Topics created successfully.'"
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.6.2
@@ -31,11 +50,17 @@ services:
       - "discovery.type=single-node"
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - "xpack.security.enabled=true"
+      - "xpack.security.transport.ssl.enabled=false"
       - "ELASTIC_PASSWORD=${ELASTIC_PASSWORD}"
     ports:
       - "9200:9200"
     volumes:
       - esdata:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -f --insecure https://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.6.2
@@ -75,12 +100,15 @@ services:
     build: ./consumer-app
     container_name: consumer
     depends_on:
-      - kafka
-      - elasticsearch
+      kafka:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - ELASTICSEARCH_HOST=http://elasticsearch:9200
       - MAXMIND_LICENSE_KEY=${MAXMIND_LICENSE_KEY}
+      - ELASTICSEARCH_URL=http://elastic:${ELASTIC_PASSWORD}@elasticsearch:9200
     restart: on-failure
 
   postgres:
@@ -104,9 +132,24 @@ services:
     ports: 
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/voip_tracer_db
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/voip_tracer_db
       - ELASTICSEARCH_HOST=http://elasticsearch:9200
       - SECRET_KEY=${SECRET_KEY}
+      - ROOT_PATH=/api
+      - ELASTICSEARCH_URL=http://elastic:${ELASTIC_PASSWORD}@elasticsearch:9200
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    restart: on-failure
+    volumes:
+      - pcap_storage:/pcap_storage
+
+  pcap-processor:
+    build: ./pcap-processor
+    container_name: pcap-processor
+    depends_on:
+      kafka:
+        condition: service_healthy
+    volumes:
+      - pcap_storage:/pcap_storage:ro # Read-only access to the files
     restart: on-failure
 
   nginx:
@@ -140,3 +183,4 @@ volumes:
     driver: local
   certbot-www:
     driver: local
+  pcap_storage:

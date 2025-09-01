@@ -1,3 +1,4 @@
+# api-app/schemas.py
 from fastapi_users import schemas
 
 class UserRead(schemas.BaseUser[int]):
