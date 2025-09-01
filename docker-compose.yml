@@ -109,6 +109,8 @@ services:
       - ELASTICSEARCH_HOST=http://elasticsearch:9200
       - MAXMIND_LICENSE_KEY=${MAXMIND_LICENSE_KEY}
       - ELASTICSEARCH_URL=http://elastic:${ELASTIC_PASSWORD}@elasticsearch:9200
+    env_file:
+      - .env
     restart: on-failure
 
   postgres:
@@ -161,7 +163,9 @@ services:
       consumer:
         condition: service_started
     environment:
-      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
+      - ELASTICSEARCH_URL=http://elastic:${ELASTIC_PASSWORD}@elasticsearch:9200
+    env_file:
+      - .env
     restart: on-failure
 
   nginx:

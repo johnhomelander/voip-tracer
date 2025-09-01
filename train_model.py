@@ -6,7 +6,7 @@ import os
 from sklearn.ensemble import IsolationForest
 
 print("Starting model training...")
-es = Elasticsearch(f"http://elastic:{os.getenv('ELASTIC_PASSWORD')}@localhost:9200")
+es = Elasticsearch(f"http://elastic:{os.getenv('ELASTIC_PASSWORD')}@elasticsearch:9200")
 model_filename = 'isolation_forest.joblib'
 
 try:
