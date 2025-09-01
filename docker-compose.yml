@@ -187,6 +187,15 @@ services:
       - certbot-data:/etc/letsencrypt
       - certbot-www:/var/www/html
 
+  frontend:
+    build: ./voip-tracer-frontend
+    container_name: frontend
+    networks:
+      - voip-net
+    env_file:
+      - ./voip-tracer-frontend/.env.local
+    restart: unless-stopped
+
 
 volumes:
   esdata:

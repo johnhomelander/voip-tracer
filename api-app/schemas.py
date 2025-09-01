@@ -1,11 +1,12 @@
 # api-app/schemas.py
 from fastapi_users import schemas
+from typing import Optional
 
 class UserRead(schemas.BaseUser[int]):
-    pass
+    username: str
 
 class UserCreate(schemas.BaseUserCreate):
-    pass
+    username: str
 
 class UserUpdate(schemas.BaseUserUpdate):
-    pass
+    username: Optional[str] = None
