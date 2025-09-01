@@ -1,4 +1,4 @@
-# consumer-app/consumer.py (Final Corrected Version)
+# consumer-app/consumer.py (Final, Complete & Corrected Version)
 import json
 import os
 import tarfile
@@ -25,7 +25,7 @@ def setup_geoip_database():
         print("GeoIP database found.", flush=True)
         return
     if not MAXMIND_LICENSE_KEY or MAXMIND_LICENSE_KEY == "YOUR_MAXMIND_LICENSE_KEY":
-        print("WARNING: MaxMind license key not set. Skipping GeoIP setup.", flush=True)
+        print("WARNING: MaxMind license key not set in .env file. Skipping GeoIP setup.", flush=True)
         return
     
     print("Downloading GeoIP database...", flush=True)
@@ -59,10 +59,7 @@ def load_blacklist():
         return set()
 
 # --- MAIN EXECUTION ---
-# The GeoIP download is disabled by default to ensure the service starts.
-# You can add your MAXMIND_LICENSE_KEY to your .env file and uncomment the line below to enable it.
-# setup_geoip_database()
-
+setup_geoip_database()
 ip_blacklist = load_blacklist()
 geoip_reader = None
 if GEOIP_DB_PATH.exists():
@@ -89,38 +86,49 @@ while True:
         time.sleep(5)
 
 es = Elasticsearch(ELASTICSEARCH_URL)
+print("Connected to Elasticsearch. Starting message processing loop...", flush=True)
 
-print("Starting message processing loop...", flush=True)
 for message in consumer:
     log_data = message.value
-    risk_score = 0
-    tags = []
+    log_type = log_data.get("fields", {}).get("log_type")
 
-    src_ip = log_data.get("id.orig_h")
-    dst_ip = log_data.get("id.resp_h")
+    if log_type == "sip":
+        # --- SIP LOG PROCESSING ---
+        risk_score = 0
+        tags = []
+        src_ip = log_data.get("id.orig_h")
+        dst_ip = log_data.get("id.resp_h")
 
-    if src_ip in ip_blacklist or dst_ip in ip_blacklist:
-        risk_score += 50
-        tags.append("blacklist_match")
+        if src_ip in ip_blacklist or dst_ip in ip_blacklist:
+            risk_score += 50
+            tags.append("blacklist_match")
 
-    if geoip_reader and src_ip:
+        if geoip_reader and src_ip:
+            try:
+                src_geo_info = geoip_reader.city(src_ip)
+                log_data["src_geo"] = {"country": src_geo_info.country.name, "city": src_geo_info.city.name}
+                if src_geo_info.country.name in HIGH_RISK_COUNTRIES:
+                    risk_score += 20
+                    tags.append("high_risk_country")
+            except (geoip2.errors.AddressNotFoundError, TypeError):
+                pass
+
+        log_data["risk_score"] = risk_score
+        if risk_score > 0:
+            tags.append("alert")
+        if tags:
+            log_data["tags"] = tags
+
         try:
-            src_geo_info = geoip_reader.city(src_ip)
-            log_data["src_geo"] = {"country": src_geo_info.country.name, "city": src_geo_info.city.name}
-            if src_geo_info.country.name in HIGH_RISK_COUNTRIES:
-                risk_score += 20
-                tags.append("high_risk_country")
-        except geoip2.errors.AddressNotFoundError:
-            pass
+            es.index(index="voip_calls", document=log_data)
+            print(f"Processed SIP log for Call-ID: {log_data.get('call_id')}", flush=True)
+        except Exception as e:
+            print(f"Failed to index SIP document: {e}", flush=True)
 
-    log_data["risk_score"] = risk_score
-    if risk_score > 0:
-        tags.append("alert")
-    if tags:
-        log_data["tags"] = tags
-
-    try:
-        es.index(index="voip_calls", document=log_data)
-        print(f"Processed log for Call-ID: {log_data.get('call_id')} | Risk Score: {risk_score}", flush=True)
-    except Exception as e:
-        print(f"Failed to index document in Elasticsearch: {e}", flush=True)
+    elif log_type == "conn":
+        # --- CONNECTION LOG PROCESSING ---
+        try:
+            es.index(index="conn_logs", document=log_data)
+            print(f"Processed Connection log for flow: {log_data.get('uid')}", flush=True)
+        except Exception as e:
+            print(f"Failed to index CONN document: {e}", flush=True)

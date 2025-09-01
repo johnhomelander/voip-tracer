@@ -6,6 +6,17 @@ filebeat.inputs:
     - /var/log/zeek/current/sip.log
   json.keys_under_root: true
   json.add_error_key: true
+  fields:
+    log_type: sip
+
+- type: log
+  enabled: true
+  paths:
+    - /var/log/zeek/current/conn.log
+  json.keys_under_root: true
+  json.add_error_key: true
+  fields:
+    log_type: conn
 
 output.kafka:
   hosts: ["kafka:29092"]
