@@ -1,4 +1,4 @@
-# api-app/main.py (Complete with /search endpoint)
+# api-app/main.py
 import os
 from contextlib import asynccontextmanager
 

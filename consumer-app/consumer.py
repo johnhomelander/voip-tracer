@@ -1,4 +1,4 @@
-# consumer-app/consumer.py (Final, Complete & Corrected Version)
+# consumer-app/consumer.py
 import json
 import os
 import tarfile

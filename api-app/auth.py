@@ -1,4 +1,4 @@
-# api-app/auth.py (Final, Complete & Corrected)
+# api-app/auth.py
 import os
 from typing import Optional
 
@@ -27,8 +27,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     async def on_after_register(self, user: User, request: Optional[Request] = None):
         print(f"User {user.id} ({user.username}) has registered.")
 
-    # This is the corrected 'create' method that was missing.
-    # It handles the incompatibility with the registration router.
+    # This handles the incompatibility with the registration router.
     async def create(
         self,
         user_create: UserCreate,
