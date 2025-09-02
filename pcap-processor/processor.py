@@ -96,6 +96,7 @@ for message in job_consumer:
             if not encrypted_sip.empty:
                 # Read conn.log and filter for UDP (RTP/SRTP) traffic
                 conn_records = [json.loads(line) for line in open(conn_log_path) if not line.startswith("#")]
+                conn_records.extend(json.loads(line) for line in open(weird_log_path) if not line.startswith("#"))
                 conn_df = pd.DataFrame(conn_records)
                 conn_df['ts'] = pd.to_datetime(conn_df['ts'], unit='s')
                 media_flows = conn_df[conn_df['proto'] == 'udp'].sort_values('ts')
