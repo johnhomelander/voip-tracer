@@ -90,6 +90,14 @@ print("Connected to Elasticsearch. Starting message processing loop...", flush=T
 
 for message in consumer:
     log_data = message.value
+
+    if 'ts' in log_data:
+        try:
+            log_data['ts'] = int(float(log_data['ts']) * 1000)
+        except (ValueError, TypeError):
+            # If conversion fails, remove the field to avoid mapping errors
+            del log_data['ts']
+
     log_type = log_data.get("fields", {}).get("log_type")
 
     if log_type == "sip":
