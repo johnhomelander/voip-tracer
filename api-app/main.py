@@ -117,7 +117,7 @@ async def get_risk_distribution(user: User = Depends(current_active_user)):
 
 @app.get("/stats/timeline", tags=["Stats"])
 async def get_timeline(user: User = Depends(current_active_user)):
-    query = {"size":0,"aggs":{"calls_over_time":{"date_histogram":{"field":"ts","calendar_interval":"1h","time_zone":"UTC"}}}}
+    query = {"size":0,"aggs":{"calls_over_time":{"date_histogram":{"field":"ts","calendar_interval":"1h","time_zone":"UTC","format":"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"}}}}
     try:
         response = es.search(index="voip_calls", body=query)
         buckets = response['aggregations']['calls_over_time']['buckets']
