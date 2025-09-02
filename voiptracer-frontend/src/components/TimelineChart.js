@@ -18,11 +18,10 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  TimeScale
 );
 import 'chartjs-adapter-date-fns';
-
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, TimeScale);
 
 export const TimelineChart = ({ chartData }) => {
   const data = {
