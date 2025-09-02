@@ -4,7 +4,7 @@ Built this project as part of the [CIIS Hackathon 2025](https://ciisummit.com/cy
 
 ## Description
 
-The VoIP Tracer is a complete pipeline established from data ingestion to analysis outputs. 
+VoIP Tracer is an intelligence platform that analyzes network metadata to detect and flag suspicious VoIP activity in real-time, even when encrypted. It has a complete pipeline established from data ingestion to analysis outputs. 
 
 - It has two main sources of inputs - a Zeek service which can be connected to a network using a VTAP or a SPAN/mirror port to stream network traffic to it, or directly ingest a pcap file of captured network traffic for analysis
 - In case of traffic through Zeek, which filters SIP and conn logs in JSON format and sends them to filebeat which takes these logs and sends them to the Kafka service under the topic of "voip_logs"
