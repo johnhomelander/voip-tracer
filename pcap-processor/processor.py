@@ -79,12 +79,14 @@ for message in job_consumer:
 
     ssl_log_path = Path("/tmp/ssl.log")
     conn_log_path = Path("/tmp/conn.log")
+    weird_log_path = Path("/tmp/weird.log")
     
-    if ssl_log_path.exists() and conn_log_path.exists():
+    if ssl_log_path.exists() and conn_log_path.exists() and weird_log_path.exists():
         print("Found ssl.log and conn.log. Analyzing for encrypted calls...", flush=True)
         try:
             # Read ssl.log and filter for potential SIP-over-TLS on port 5061
             ssl_records = [json.loads(line) for line in open(ssl_log_path) if not line.startswith("#")]
+            ssl_records.extend(json.loads(line) for line in open(weird_log_path) if not line.startswith("#"))
             ssl_df = pd.DataFrame(ssl_records)
             ssl_df['ts'] = pd.to_datetime(ssl_df['ts'], unit='s')
             encrypted_sip = ssl_df[
