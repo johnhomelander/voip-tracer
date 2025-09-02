@@ -1,5 +1,5 @@
 // src/components/TimelineChart.js
-import {Line} from 'react-chartjs-2';
+import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -9,7 +9,7 @@ import {
   Title,
   Tooltip,
   Legend,
-} from 'chart.js';
+} from "chart.js";
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -17,18 +17,18 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend,
+  Legend
 );
 
-export const TimelineChart = ({chartData}) => {
+export const TimelineChart = ({ chartData }) => {
   const data = {
-    labels: chartData.labels.map(l => new Date(l).toLocaleTimeString()),
+    labels: chartData.labels,
     datasets: [
       {
-        label: 'Calls per Hour',
+        label: "Calls per Hour",
         data: chartData.data,
-        borderColor: 'rgb(79, 70, 229)',
-        backgroundColor: 'rgba(79, 70, 229, 0.5)',
+        borderColor: "rgb(79, 70, 229)",
+        backgroundColor: "rgba(79, 70, 229, 0.5)",
         fill: true,
       },
     ],
@@ -36,8 +36,31 @@ export const TimelineChart = ({chartData}) => {
   const options = {
     responsive: true,
     plugins: {
-      legend: {display: false},
-      title: {display: true, text: 'Call Volume Over Time'},
+      legend: { display: false },
+      title: { display: true, text: "Call Volume Over Time" },
+    },
+    scales: {
+      x: {
+        type: "time",
+        time: {
+          unit: "hour",
+          tooltipFormat: "MMM d, yyyy HH:mm",
+          displayFormats: {
+            hour: "HH:mm",
+          },
+        },
+        title: {
+          display: true,
+          text: "Time",
+        },
+      },
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: "Number of Calls",
+        },
+      },
     },
   };
   return <Line options={options} data={data} />;
