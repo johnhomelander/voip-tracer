@@ -9,6 +9,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  TimeScale
 } from "chart.js";
 ChartJS.register(
   CategoryScale,
@@ -19,6 +20,9 @@ ChartJS.register(
   Tooltip,
   Legend
 );
+import 'chartjs-adapter-date-fns';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, TimeScale);
 
 export const TimelineChart = ({ chartData }) => {
   const data = {
