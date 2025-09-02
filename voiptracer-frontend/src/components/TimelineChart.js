@@ -9,8 +9,9 @@ import {
   Title,
   Tooltip,
   Legend,
-  TimeScale
+  TimeScale,
 } from "chart.js";
+import "chartjs-adapter-date-fns";
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -21,15 +22,22 @@ ChartJS.register(
   Legend,
   TimeScale
 );
-import 'chartjs-adapter-date-fns';
 
 export const TimelineChart = ({ chartData }) => {
+  if (!chartData || !chartData.labels || !chartData.data) {
+    return <p>Loading chart data...</p>;
+  }
+
+  const formattedData = chartData.labels.map((label, index) => ({
+    x: new Date(label), // Use a JavaScript Date object for the x-axis
+    y: chartData.data[index], // Use the count for the y-axis
+  }));
+
   const data = {
-    labels: chartData.labels,
     datasets: [
       {
         label: "Calls per Hour",
-        data: chartData.data,
+        data: formattedData,
         borderColor: "rgb(79, 70, 229)",
         backgroundColor: "rgba(79, 70, 229, 0.5)",
         fill: true,
@@ -54,7 +62,7 @@ export const TimelineChart = ({ chartData }) => {
         },
         title: {
           display: true,
-          text: "Time",
+          text: "Time (UTC)",
         },
       },
       y: {
