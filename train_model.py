@@ -1,4 +1,4 @@
-# train_model.py (Corrected and More Robust)
+# train_model.py
 import pandas as pd
 import joblib
 from elasticsearch import Elasticsearch
@@ -23,7 +23,7 @@ try:
 
     # --- Feature Engineering (More Robust) ---
 
-    # This is the fix: Check if the 'duration' column exists. If not, create it with zeros.
+    # Check if the 'duration' column exists. If not, create it with zeros.
     if 'duration' not in df.columns:
         df['duration'] = 0
 
