@@ -211,95 +211,107 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-xl">
-            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mb-4">
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by IP address..."
-                className="flex-grow px-3 py-2 text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              />
-              <div className="flex space-x-2">
-                <button
-                  onClick={handleSearch}
-                  className="w-full sm:w-auto px-6 py-2 font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
-                >
-                  Search
-                </button>
-                <button
-                  onClick={() => {
-                    setSearchTerm("");
-                    fetchData();
-                  }}
-                  className="w-full sm:w-auto px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-                >
-                  Clear
-                </button>
-              </div>
+          <div className="lg:col-span-2">
+            <div className="bg-white p-6 rounded-lg shadow-xl mb-4">
+              <p className="text-sm text-gray-600 mb-4">
+                For this scenario, we setup an Asterisk VoIP server on our local network and captured calls made on it. The 172.19.x.x addresses are from our local network.
+                Now, these are the logs that are processed through our pcap-processor service. The initial risk score is calculated based on the Geo-IP and Threat Intel feeds.
+                After that, we have an analysis service running, which uses an Isolation Forest model trained on our normal traffic to detect anomalous traffic and update the risk scores respectively.
+                <br />You can upload your own pcap file for analysis here.
+              </p>
             </div>
+            <div className="bg-white p-6 rounded-lg shadow-xl">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mb-4">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search by IP address..."
+                  className="flex-grow px-3 py-2 text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <div className="flex space-x-2">
+                  <button
+                    onClick={handleSearch}
+                    className="w-full sm:w-auto px-6 py-2 font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+                  >
+                    Search
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSearchTerm("");
+                      fetchData();
+                    }}
+                    className="w-full sm:w-auto px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
 
-            {loading && <p className="text-center p-4">Loading data...</p>}
-            {error && <p className="text-center p-4 text-red-500">{error}</p>}
+              {loading && <p className="text-center p-4">Loading data...</p>}
+              {error && <p className="text-center p-4 text-red-500">{error}</p>}
 
-            {!loading && !error && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left table-auto">
-                  <thead className="bg-gray-200 text-gray-700">
-                    <tr>
-                      <th className="px-4 py-2">Risk</th>
-                      <th className="px-4 py-2">Source IP</th>
-                      <th className="px-4 py-2">Destination IP</th>
-                      <th className="px-4 py-2">Timestamp</th>
-                      <th className="px-4 py-2">Source File</th>
-                      <th className="px-4 py-2">Tags</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-gray-800">
-                    {calls.length > 0 ? (
-                      calls.map((call, index) => (
-                        <tr
-                          key={call.uid || index}
-                          className={`border-b ${
-                            call.risk_score > 40
-                              ? "bg-red-50 hover:bg-red-100"
-                              : "hover:bg-gray-50"
-                          }`}
-                        >
-                          <td
-                            className={`px-4 py-2 font-bold ${
+              {!loading && !error && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left table-auto">
+                    <thead className="bg-gray-200 text-gray-700">
+                      <tr>
+                        <th className="px-4 py-2">Risk</th>
+                        <th className="px-4 py-2">Source IP</th>
+                        <th className="px-4 py-2">Destination IP</th>
+                        <th className="px-4 py-2">Timestamp</th>
+                        <th className="px-4 py-2">Source File</th>
+                        <th className="px-4 py-2">Tags</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-gray-800">
+                      {calls.length > 0 ? (
+                        calls.map((call, index) => (
+                          <tr
+                            key={call.uid || index}
+                            className={`border-b ${
                               call.risk_score > 40
-                                ? "text-red-700"
-                                : "text-green-700"
+                                ? "bg-red-50 hover:bg-red-100"
+                                : "hover:bg-gray-50"
                             }`}
                           >
-                            {call.risk_score}
+                            <td
+                              className={`px-4 py-2 font-bold ${
+                                call.risk_score > 40
+                                  ? "text-red-700"
+                                  : "text-green-700"
+                              }`}
+                            >
+                              {call.risk_score}
+                            </td>
+                            <td className="px-4 py-2">{call["id.orig_h"]}</td>
+                            <td className="px-4 py-2">{call["id.resp_h"]}</td>
+                            <td className="px-4 py-2 text-sm text-gray-600">
+                              {new Date(call.ts * 1000).toLocaleString()}
+                            </td>
+                            <td className="px-4 py-2 text-xs">
+                              {call["source"]}
+                            </td>
+                            <td className="px-4 py-2">
+                              {renderTags(call.tags)}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan="5"
+                            className="text-center p-4 text-gray-500"
+                          >
+                            No call data found.
                           </td>
-                          <td className="px-4 py-2">{call["id.orig_h"]}</td>
-                          <td className="px-4 py-2">{call["id.resp_h"]}</td>
-                          <td className="px-4 py-2 text-sm text-gray-600">
-                            {new Date(call.ts * 1000).toLocaleString()}
-                          </td>
-                          <td className="px-4 py-2 text-xs">
-                            {call["source"]}
-                          </td>
-                          <td className="px-4 py-2">{renderTags(call.tags)}</td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan="5"
-                          className="text-center p-4 text-gray-500"
-                        >
-                          No call data found.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="lg:col-span-1">
@@ -327,7 +339,7 @@ const Dashboard = () => {
                 </p>
               )}
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-xl">
+            <div className="bg-white p-6 mt-4 rounded-lg shadow-xl">
               <h2 className="text-xl font-bold text-gray-800 mb-4">
                 About This Project
               </h2>
